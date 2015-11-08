@@ -1,0 +1,220 @@
+`timescale 1ns / 1ps
+
+////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer:
+//
+// Create Date:   18:28:57 11/07/2015
+// Design Name:   fp_to_smc_float
+// Module Name:   C:/Users/User/Desktop/Project/ee216projv1/projv1_test.v
+// Project Name:  ee216projv1
+// Target Device:  
+// Tool versions:  
+// Description: 
+//
+// Verilog Test Fixture created by ISE for module: fp_to_smc_float
+//
+// Dependencies:
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+////////////////////////////////////////////////////////////////////////////////
+
+//module smc_float_multiplier_test();
+//module smc_float_adder_test();
+module mult_then_add_tset ();
+
+// Inputs
+reg       		clk;
+reg            GlobalReset;
+
+reg	[20:0]  	fp_x_i;
+reg   [20:0]  	fp_y_i;
+
+reg   [31:0]  	x_mult_i;
+reg   [31:0]  	y_mult_i;
+reg   [31:0]  	x_add_i;
+reg   [31:0]  	y_add_i;
+
+reg   [31:0]  	x_i_conv_out;
+
+reg            srdyi_mult, srdyi_add;
+reg            srdyi_conv1, srdyi_conv2, srdyi_conv_out;
+
+// Outputs
+wire 	[31:0] 	y_o_conv1;
+wire 	[31:0] 	y_o_conv2;
+
+wire 	[31:0] 	z_mult_o;
+wire 	[31:0] 	z_add_o;
+
+wire	[20:0]  	fp_z_o;
+
+wire	[31:0]	z_i;
+
+wire           srdyo_conv1, srdyo_conv2, srdyo_conv_out; 
+wire				srdyo_mult;
+wire				srdyo_add;
+
+integer i,j, answer;//outfile,pat_error;
+reg [20:0] mult_add_ans;
+
+//////////////////////////////////////////////////////////////////////
+// assign the instruction you want to test: 
+// from 000 ~ 111 mapping to your instruction 000 ~ 111
+// 1XXX means all instructions will be tested
+
+//assign	test_instruction = 4'b1000;
+
+//////////////////////////////////////////////////////////////////////
+
+// Instantiate a Design Under Test (DUT)
+smc_float_adder add_0 (
+	.clk				(clk),
+	.GlobalReset	(GlobalReset),
+	.x_i_porty 		(x_add_i),
+	.y_i_porty 		(y_add_i),
+	.z_o_portx 		(z_add_o),
+	.srdyo_o 		(srdyo_add),
+	.srdyi_i 		(srdyi_add)
+	);
+
+
+smc_float_multiplier mult_0 (
+    .clk    (clk),
+    .GlobalReset	(GlobalReset),
+    .x_i_porty   	(x_mult_i),
+    .y_i_porty   	(y_mult_i),
+    .srdyi_i		(srdyi_mult),
+    .srdyo_o     	(srdyo_mult),
+    .z_o_portx 	(z_mult_o)
+	 );
+
+  
+fp_to_smc_float conv_1(
+  .clk(clk),
+  .GlobalReset(GlobalReset),
+  .y_o_portx(y_o_conv1), // ufix32_En0
+  .x_i(fp_x_i), // sfix21_En0
+  .srdyo_o(srdyo_conv1), // ufix1
+  .srdyi_i(srdyi_conv1) // ufix1
+//@
+);
+
+fp_to_smc_float conv_2(
+  .clk(clk),
+  .GlobalReset(GlobalReset),
+  .y_o_portx(y_o_conv2), // ufix32_En0
+  .x_i(fp_y_i), // sfix21_En0
+  .srdyo_o(srdyo_conv2), // ufix1
+  .srdyi_i(srdyi_conv2) // ufix1
+//@
+);
+
+smc_float_to_fp conv_out(
+  .clk(clk),
+  .GlobalReset(GlobalReset),
+  .x_i_porty(x_i_conv_out), // ufix32_En0
+  .y_o(fp_z_o), // sfix21_En0
+  .srdyo_o(srdyo_conv_out), // ufix1
+  .srdyi_i(srdyi_conv_out) // ufix1
+//@
+);
+
+// Oscillate the clock (cycle time is 8ns)
+always #5 clk = ~clk;
+
+
+initial begin
+    
+
+    GlobalReset=1'b0;
+    clk=1'b1;
+    fp_y_i=0;
+    fp_x_i=0;
+    x_mult_i=0;
+    y_mult_i=0;
+	 x_add_i=0;
+	 y_add_i=0;
+    srdyi_conv1=0;
+    srdyi_conv2=0;
+    srdyi_mult=0;
+	 srdyi_add=0;
+    #2 GlobalReset=1'b1; // system reset
+    #2 GlobalReset=1'b0;
+
+	 
+assign x_mult_i = y_o_conv1;
+assign y_mult_i = y_o_conv2;
+assign x_add_i = z_mult_o;
+//////////
+assign y_add_i = 0;
+assign x_i_conv_out = z_add_o;
+
+    
+		
+		    i=34; j=56; 
+			 answer=(i*j);
+			 fp_x_i = i[20:0]; fp_y_i = j[20:0];
+		    srdyi_conv1=1; srdyi_conv2=1;
+		    
+		    #20;
+			 
+			 srdyi_conv1=0; srdyi_conv2=0;
+		    if ((srdyo_conv1==1)&&(srdyo_conv2==1)) begin
+		        srdyi_mult=1;
+		        #60;
+		        if(srdyo_mult==1) begin
+		            srdyi_add=1;
+		            #90;
+		            if (srdyo_add==1) begin
+		            srdyi_conv_out=1;
+		            #30;
+							if(srdyo_conv_out==1) begin
+							mult_add_ans=fp_z_o;
+							end
+						end
+		        end
+			end
+//PROBLEM/SOLUTION???		
+			assign y_add_i = z_add_o; //problem is that for first addition, we have to add output
+												//of the multiplier to zero, to get final answer. but for  
+												//the rest of the calculations, the output of the multiplier 
+												//is added to the final answer, to get a new final answer.
+												//From hardware prespective, we can't just add
+												//			assign y_add_i = z_add_o;		here...
+			i=20; j =10;
+			answer=answer +(i*j);
+			fp_x_i = i[20:0]; fp_y_i = j[20:0];
+		   srdyi_conv1=1; srdyi_conv2=1;
+			#20;
+			srdyi_conv1=0; srdyi_conv2=0;
+		    if ((srdyo_conv1==1)&&(srdyo_conv2==1)) begin
+		        srdyi_mult=1;
+		        #60;
+		        if(srdyo_mult==1) begin
+		            srdyi_add=1;
+		            #90;
+		            if (srdyo_add==1) begin
+		            srdyi_conv_out=1;
+		            #30;
+							if(srdyo_conv_out==1) begin
+							mult_add_ans=fp_z_o;
+							end
+						end
+		        end
+			end
+		
+		if(mult_add_ans==answer[20:0])begin
+			$display("answer=%d, mult_add_ans=%d .Test passed",answer,mult_add_ans);
+		end else begin
+			$display("answer=%d, mult_add_ans=%d .Test failed",answer,mult_add_ans);
+		end
+		       
+	#10 $stop;
+
+end
+
+endmodule
