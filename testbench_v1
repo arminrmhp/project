@@ -43,6 +43,8 @@ reg   [31:0]  	x_i_conv_out;
 reg            srdyi_mult, srdyi_add;
 reg            srdyi_conv1, srdyi_conv2, srdyi_conv_out;
 
+reg		coeff;
+
 // Outputs
 wire 	[31:0] 	y_o_conv1;
 wire 	[31:0] 	y_o_conv2;
@@ -150,7 +152,7 @@ assign x_mult_i = y_o_conv1;
 assign y_mult_i = y_o_conv2;
 assign x_add_i = z_mult_o;
 //////////
-assign y_add_i = 0;
+assign y_add_i = coeff;
 assign x_i_conv_out = z_add_o;
 
     
