@@ -17,21 +17,19 @@
 // Dependencies:
 // 
 // Revision:
-// Revision 0.01 - File Created
+// Revision 0.2
 // Additional Comments:
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-//module smc_float_multiplier_test();
-//module smc_float_adder_test();
 module mult_then_add_tset ();
 
 // Inputs
 reg       		clk;
 reg            GlobalReset;
 
-reg	[20:0]  	fp_x_i;
-reg   [20:0]  	fp_y_i;
+reg	[20:0]  	fp_x_i; //x[n] polynomial, float
+reg   [20:0]  	fp_y_i;	//y[n] output (Z^-1), float
 
 reg   [31:0]  	x_mult_i;
 reg   [31:0]  	y_mult_i;
@@ -42,8 +40,6 @@ reg   [31:0]  	x_i_conv_out;
 
 reg            srdyi_mult, srdyi_add;
 reg            srdyi_conv1, srdyi_conv2, srdyi_conv_out;
-
-reg		coeff;
 
 // Outputs
 wire 	[31:0] 	y_o_conv1;
@@ -59,6 +55,8 @@ wire	[31:0]	z_i;
 wire           srdyo_conv1, srdyo_conv2, srdyo_conv_out; 
 wire				srdyo_mult;
 wire				srdyo_add;
+
+wire				coeff;
 
 integer i,j, answer;//outfile,pat_error;
 reg [20:0] mult_add_ans;
@@ -148,18 +146,18 @@ initial begin
     #2 GlobalReset=1'b0;
 
 	 
-assign x_mult_i = y_o_conv1;
-assign y_mult_i = y_o_conv2;
-assign x_add_i = z_mult_o;
-//////////
-assign y_add_i = coeff;
-assign x_i_conv_out = z_add_o;
+assign x_mult_i = y_o_conv1;	//x[n], SMC
+assign y_mult_i = y_o_conv2;	//Z^-1, SMC
+assign x_add_i = z_mult_o;		//x[n]*Z^-1 SMC
+assign y_add_i = coeff;			//coeff
+assign x_i_conv_out = z_add_o;//y[n], Float
 
     
 		
-		    i=34; j=56; 
-			 answer=(i*j);
-			 fp_x_i = i[20:0]; fp_y_i = j[20:0];
+		    //i=34; j=56; 
+			 //answer=(i*j);
+			 //fp_x_i = i[20:0]; 
+			 //fp_y_i = j[20:0];
 		    srdyi_conv1=1; srdyi_conv2=1;
 		    
 		    #20;
@@ -179,14 +177,8 @@ assign x_i_conv_out = z_add_o;
 							end
 						end
 		        end
-			end
-//PROBLEM/SOLUTION???		
-			assign y_add_i = z_add_o; //problem is that for first addition, we have to add output
-												//of the multiplier to zero, to get final answer. but for  
-												//the rest of the calculations, the output of the multiplier 
-												//is added to the final answer, to get a new final answer.
-												//From hardware prespective, we can't just add
-												//			assign y_add_i = z_add_o;		here...
+			end	
+			assign y_add_i = z_add_o;
 			i=20; j =10;
 			answer=answer +(i*j);
 			fp_x_i = i[20:0]; fp_y_i = j[20:0];
