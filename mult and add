@@ -1,0 +1,189 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// 
+// Engineer: Armin Azizian
+// 
+// Create Date:    15:54:03 11/14/2015 
+// Design Name: 
+// Module Name:    mult_then_add 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+module add_then_mult(
+		input clk				,
+		input GlobalReset		,
+		input fp_x_orig		,
+		input fp_mean			,
+		input fp_std			,
+		input srdyi_conv_x	,
+		input srdyi_conv_mean,
+		input srdyi_conv_std	,
+		output smc_x_new		,
+		output srdyo_mult_1	
+    );
+	
+	reg				clk;
+	reg				GlobalReset;
+	reg	[20:0]	fp_x_orig;
+	reg	[20:0]	fp_mean;
+	reg	[20:0]	fp_std;
+	reg				srdyi_conv_x;
+	reg				srdyi_conv_mean;
+	reg				srdyi_conv_std;
+	reg				srdyi_mult_1;
+	reg				srdyi_add_1;
+	reg	[31:0]	x_i_add;
+	reg	[31:0]	y_i_add;
+	reg	[31:0]	x_i_mult;
+	reg	[31:0]	y_i_mult;
+	
+	wire	[20:0]	smc_x_new;
+	wire	[31:0]	y_o_conv_x;
+	wire	[31:0]	y_o_conv_mean;
+	wire	[31:0]	y_o_conv_std;
+	wire	[31:0]	y_o_add_1;
+	wire	[31:0]	smc_x_new;
+	wire				srdyo_mult_1;
+	wire				srdyo_add_1;
+	wire				srdyo_conv_std;
+	wire				srdyo_conv_x;
+	wire				srdyo_conv_mean;
+
+	assign	x_i_add = y_o_conv_x;
+	assign	y_i_add = y_o_conv_mean;
+	assign	x_i_mult = y_o_add_1;
+	assign	y_i_mult = y_o_conv_std;
+	assign 	srdyi_mult_1 = srdyo_conv_std and srdyo_add_1;
+	assign	srdyi_add_1 = srdyo_conv_x and srdyo_conv_mean;
+
+
+	smc_float_adder add_0 (
+		.clk				(clk),
+		.GlobalReset	(GlobalReset),
+		.x_i_porty 		(x_i_add),
+		.y_i_porty 		(y_i_mult),
+		.z_o_portx 		(y_o_add_1),
+		.srdyo_o 		(srdyo_add_1),
+		.srdyi_i 		(srdyi_add_1)
+	);
+	
+	smc_float_multiplier mult_0 (
+		.clk   			(clk),
+		.GlobalReset	(GlobalReset),
+		.x_i_porty   	(y_o_add_1),
+		.y_i_porty   	(y_mult_i),
+		.srdyi_i			(srdyi_mult_1),
+		.srdyo_o     	(srdyo_mult_1),
+		.z_o_portx 		(smc_x_new)
+	);
+	
+	fp_to_smc_float conv_x(
+		.clk				(clk),
+		.GlobalReset	(GlobalReset),
+		.y_o_portx		(y_o_conv_x),
+		.x_i				(fp_x_orig),
+		.srdyo_o			(srdyo_conv_x),
+		.srdyi_i			(srdyi_conv_x) 
+	);
+	
+	fp_to_smc_float conv_mean(
+		.clk				(clk),
+		.GlobalReset	(GlobalReset),
+		.y_o_portx		(y_o_conv_mean),
+		.x_i				(fp_mean),
+		.srdyo_o			(srdyo_conv_mean),
+		.srdyi_i			(srdyi_conv_mean) 
+	);
+	
+	fp_to_smc_float conv_std(
+		.clk				(clk),
+		.GlobalReset	(GlobalReset),
+		.y_o_portx		(y_o_conv_std),
+		.x_i				(fp_std),
+		.srdyo_o			(srdyo_conv_std),
+		.srdyi_i			(srdyi_conv_std) 
+	);
+
+endmodule
+
+//--------------------------------------------------------------------------------
+
+module mult_then_add(
+		input clk					,
+		input GlobalReset			,
+		input smc_x_new			,
+		input smc_z_inv_out		,
+		input fp_coeff				,
+		input srdyo_mult_1		,
+		input srdyi_z_inv			,
+		input srdyi_conv_coeff	,
+		output smc_z_inv			,
+		output srdyo_z_inv	
+    );
+	 
+	reg				clk;
+	reg				GlobalReset;
+	reg	[20:0]	fp_coeff;
+	reg				srdyo_mult_1;
+	reg				srdyi_z_inv;
+	reg				srdyi_conv_coeff;
+	reg				srdyi_mult_2;
+	reg				srdyi_add_2;
+	reg	[31:0]	x_i_add;
+	reg	[31:0]	y_i_add;
+	reg	[31:0]	smc_x_new;
+	reg	[31:0]	smc_z_inv_out;
+	
+	wire	[31:0]	smc_z_inv;
+	wire	[31:0]	y_o_conv_coeff;
+	wire	[31:0]	y_o_mult_2;
+	wire				srdyo_mult_2;
+	wire				srdyo_add_2;
+	wire				srdyo_conv_coeff;
+
+	assign	x_i_add = y_o_mult_2;
+	assign	y_i_add = y_o_conv_coeff;
+	assign 	srdyi_mult_2 = srdyo_mult_1 and srdyi_z_inv;
+	assign	srdyi_add_2 = srdyo_mult_2 and srdyo_conv_coeff;
+
+	smc_float_adder add_1 (
+		.clk				(clk),
+		.GlobalReset	(GlobalReset),
+		.x_i_porty 		(x_i_add),
+		.y_i_porty 		(y_i_add),
+		.z_o_portx 		(smc_z_inv),
+		.srdyo_o 		(srdyo_add_2),
+		.srdyi_i 		(srdyi_add_2)
+	);
+	
+	smc_float_multiplier mult_1 (
+		.clk   			(clk),
+		.GlobalReset	(GlobalReset),
+		.x_i_porty   	(smc_x_new),
+		.y_i_porty   	(smc_z_inv_out),
+		.srdyi_i			(srdyi_mult_2),
+		.srdyo_o     	(srdyo_mult_2),
+		.z_o_portx 		(y_o_mult_2)
+	);
+	
+	fp_to_smc_float conv_coeff (
+		.clk				(clk),
+		.GlobalReset	(GlobalReset),
+		.y_o_portx		(y_o_conv_coeff),
+		.x_i				(fp_coeff),
+		.srdyo_o			(srdyo_conv_coeff),
+		.srdyi_i			(srdyi_conv_coeff) 
+	);
+	
+endmodule;
+
+//--------------------------------------------------------------------------------
